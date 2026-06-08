@@ -1,0 +1,287 @@
+:root {
+  --bg: #f7f3ec;
+  --panel: #ffffff;
+  --ink: #2a2a2a;
+  --muted: #888;
+  --accent: #d96459;
+  --accent-2: #5a8d77;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+}
+
+header {
+  width: 100%;
+  max-width: 720px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1 {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+header nav button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+header nav button.active {
+  background: var(--ink);
+  color: white;
+}
+
+header nav button:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 720px;
+  padding: 12px 24px 40px;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  align-items: center;
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+}
+
+.controls input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-2);
+}
+
+.score {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.score b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ---- Mode selector (landing) ---- */
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.mode-card {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border: 2px solid transparent;
+}
+
+.mode-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-2);
+}
+
+.mode-card .glyph {
+  font-size: 3.5rem;
+  margin-bottom: 8px;
+  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+}
+
+.mode-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+
+.mode-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---- Typing mode ---- */
+.glyph-display {
+  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", "Noto Sans JP", sans-serif;
+  font-size: 11rem;
+  text-align: center;
+  line-height: 1;
+  margin: 20px 0 28px;
+  user-select: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.glyph-display.flash {
+  color: var(--accent-2);
+  transform: scale(1.08);
+}
+
+.typing-input {
+  display: block;
+  width: 100%;
+  font-size: 1.6rem;
+  padding: 14px 18px;
+  text-align: center;
+  border: 2px solid #e3ddd0;
+  border-radius: var(--radius);
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.typing-input:focus {
+  border-color: var(--accent-2);
+}
+
+.typing-input.wrong {
+  border-color: var(--accent);
+  background: #fff4f3;
+  animation: shake 0.25s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.hint {
+  text-align: center;
+  margin-top: 12px;
+  min-height: 1.2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---- Drawing mode ---- */
+.draw-prompt {
+  text-align: center;
+  margin: 12px 0 18px;
+}
+
+.draw-prompt .romaji {
+  font-size: 3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.draw-prompt .label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+
+.canvas-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+#drawCanvas {
+  background: #fafafa;
+  border: 2px dashed #ddd;
+  border-radius: var(--radius);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.draw-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn {
+  font-size: 1rem;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn:active { transform: translateY(1px); }
+
+.btn.primary {
+  background: var(--accent-2);
+  color: white;
+}
+.btn.primary:hover { background: #4a7866; }
+
+.btn.secondary {
+  background: #eee;
+  color: var(--ink);
+}
+.btn.secondary:hover { background: #e0e0e0; }
+
+.feedback {
+  text-align: center;
+  margin-top: 16px;
+  min-height: 1.5rem;
+  font-size: 1rem;
+}
+
+.feedback.correct { color: var(--accent-2); font-weight: 600; }
+.feedback.wrong { color: var(--accent); }
+
+.feedback .guess {
+  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 1.4rem;
+  margin: 0 6px;
+}
