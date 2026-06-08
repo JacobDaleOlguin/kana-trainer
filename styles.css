@@ -390,6 +390,84 @@ main {
   margin: 0 4px;
 }
 
+/* ---- Choose / Listen modes ---- */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+
+.choice-tile {
+  font: inherit;
+  font-family: var(--font-jp);
+  font-size: 2.2rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 0;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 140ms var(--ease), background 180ms var(--ease),
+              color 180ms var(--ease), transform 80ms var(--ease);
+}
+
+.choice-tile:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.choice-tile:active:not(:disabled) { transform: translateY(0); }
+
+.choice-tile.correct {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.choice-tile.wrong {
+  background: var(--error-soft);
+  border-color: var(--error);
+  color: var(--error);
+  animation: shake 280ms var(--ease);
+}
+
+.choice-tile:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* ---- Listen mode audio prompt ---- */
+.audio-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+
+.audio-prompt .speak {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  padding: 12px 24px;
+  border-radius: 999px;
+}
+
+.audio-prompt .speak .speaker {
+  font-size: 0.85rem;
+}
+
+.audio-prompt .label {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
 /* ---- Phrase mode ---- */
 .draw-prompt .meaning {
   font-size: 0.9rem;

@@ -66,6 +66,8 @@ function swapContent(el, update) {
 // ---- View routing ----
 const views = {
   menu: renderMenu,
+  choose: renderChoose,
+  listen: renderListen,
   typing: renderTyping,
   drawing: renderDrawing,
   phrase: renderPhrase,
@@ -91,19 +93,29 @@ document.addEventListener('DOMContentLoaded', () => {
 function renderMenu(root) {
   root.innerHTML = `
     <div class="mode-grid">
-      <div class="mode-card" data-go="typing">
+      <div class="mode-card" data-go="choose">
         <div class="glyph">あ</div>
-        <h2>Typing mode</h2>
+        <h2>Choose</h2>
+        <p>See a sound, tap the symbol</p>
+      </div>
+      <div class="mode-card" data-go="listen">
+        <div class="glyph">🔊</div>
+        <h2>Listen</h2>
+        <p>Hear it, tap what you heard</p>
+      </div>
+      <div class="mode-card" data-go="typing">
+        <div class="glyph">か</div>
+        <h2>Typing</h2>
         <p>See a symbol, type its sound</p>
       </div>
       <div class="mode-card" data-go="drawing">
         <div class="glyph">ka</div>
-        <h2>Drawing mode</h2>
+        <h2>Drawing</h2>
         <p>Hear a sound, draw the symbol</p>
       </div>
       <div class="mode-card" data-go="phrase">
         <div class="glyph">ねこ</div>
-        <h2>Phrase mode</h2>
+        <h2>Phrases</h2>
         <p>Drag kana to spell simple words</p>
       </div>
     </div>
@@ -390,6 +402,240 @@ function renderDrawing(root) {
   }
 
   rebuildQueue();
+}
+
+// ---- Choose mode (multiple choice: see romaji, tap kana) ----
+function renderChoose(root) {
+  const state = { hiragana: true, katakana: true, includeDakuten: false };
+  const NUM_CHOICES = 6;
+  let queue = [], current = null, options = [];
+  let correct = 0, seen = 0, wrongThisRound = false, locked = false;
+
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  const settings = setsPanel(state, rebuild);
+  panel.appendChild(settings);
+
+  const prompt = document.createElement('div');
+  prompt.className = 'draw-prompt';
+  prompt.innerHTML = `<p class="label">Tap the symbol for</p><p class="romaji"></p>`;
+  panel.appendChild(prompt);
+
+  const choicesEl = document.createElement('div');
+  choicesEl.className = 'choices';
+  panel.appendChild(choicesEl);
+
+  const feedback = document.createElement('div');
+  feedback.className = 'feedback';
+  panel.appendChild(feedback);
+
+  root.appendChild(panel);
+
+  function rebuild() {
+    const all = getKanaSet(state);
+    if (all.length < NUM_CHOICES) {
+      queue = []; current = null;
+      prompt.querySelector('.romaji').textContent = '—';
+      choicesEl.innerHTML = '';
+      feedback.textContent = 'Pick at least one set above.';
+      return;
+    }
+    queue = shuffled(all);
+    next();
+  }
+
+  function next() {
+    if (queue.length === 0) queue = shuffled(getKanaSet(state));
+    current = queue.shift();
+    locked = false;
+    wrongThisRound = false;
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+
+    const pool = getKanaSet(state)
+      .filter(k => k.char !== current.char && k.script === current.script);
+    const distractors = shuffled(pool).slice(0, NUM_CHOICES - 1);
+    options = shuffled([current, ...distractors]);
+
+    swapContent(prompt, () => {
+      prompt.querySelector('.romaji').textContent = current.romaji[0];
+    });
+    seen++;
+    updateScore(settings, correct, seen);
+    renderChoices();
+  }
+
+  function renderChoices() {
+    choicesEl.innerHTML = '';
+    options.forEach(k => {
+      const tile = document.createElement('button');
+      tile.className = 'choice-tile';
+      tile.type = 'button';
+      tile.textContent = k.char;
+      tile.addEventListener('click', () => choose(k, tile));
+      choicesEl.appendChild(tile);
+    });
+  }
+
+  function choose(k, tile) {
+    if (locked) return;
+    if (k.char === current.char) {
+      tile.classList.add('correct');
+      if (!wrongThisRound) correct++;
+      updateScore(settings, correct, seen);
+      playDing();
+      locked = true;
+      setTimeout(next, 550);
+    } else {
+      tile.classList.add('wrong');
+      tile.disabled = true;
+      wrongThisRound = true;
+      playBuzz();
+      feedback.className = 'feedback wrong';
+      feedback.innerHTML = `That's <span class="guess">${k.char}</span> (${k.romaji[0]}). Try again.`;
+    }
+  }
+
+  rebuild();
+}
+
+// ---- Listen mode (audio → tap kana) ----
+function speakKana(char) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(char);
+  u.lang = 'ja-JP';
+  u.rate = 0.8;
+  const voices = speechSynthesis.getVoices();
+  const ja = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja'));
+  if (ja) u.voice = ja;
+  speechSynthesis.speak(u);
+}
+
+// Voices may load asynchronously; warm them up.
+if ('speechSynthesis' in window) {
+  speechSynthesis.getVoices();
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+  }
+}
+
+function renderListen(root) {
+  const state = { hiragana: true, katakana: true, includeDakuten: false };
+  const NUM_CHOICES = 6;
+  let queue = [], current = null, options = [];
+  let correct = 0, seen = 0, wrongThisRound = false, locked = false;
+
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  const settings = setsPanel(state, rebuild);
+  panel.appendChild(settings);
+
+  // Audio prompt area
+  const audioWrap = document.createElement('div');
+  audioWrap.className = 'audio-prompt';
+  audioWrap.innerHTML = `
+    <button class="btn primary speak" type="button" title="Replay">
+      <span class="speaker">▶</span> Play
+    </button>
+    <p class="label">Tap the kana you heard</p>
+  `;
+  panel.appendChild(audioWrap);
+
+  const choicesEl = document.createElement('div');
+  choicesEl.className = 'choices';
+  panel.appendChild(choicesEl);
+
+  const feedback = document.createElement('div');
+  feedback.className = 'feedback';
+  panel.appendChild(feedback);
+
+  root.appendChild(panel);
+
+  // Heads-up if Japanese voice not present
+  if ('speechSynthesis' in window) {
+    const checkVoices = () => {
+      const v = speechSynthesis.getVoices();
+      const hasJa = v.some(x => x.lang && x.lang.toLowerCase().startsWith('ja'));
+      if (!hasJa && v.length > 0) {
+        feedback.className = 'feedback';
+        feedback.style.color = 'var(--text-faint)';
+        feedback.textContent = 'Tip: install a Japanese voice for better pronunciation.';
+      }
+    };
+    setTimeout(checkVoices, 400);
+  } else {
+    feedback.textContent = 'This browser does not support speech synthesis.';
+  }
+
+  audioWrap.querySelector('.speak').addEventListener('click', () => {
+    if (current) speakKana(current.char);
+  });
+
+  function rebuild() {
+    const all = getKanaSet(state);
+    if (all.length < NUM_CHOICES) {
+      queue = []; current = null;
+      choicesEl.innerHTML = '';
+      feedback.textContent = 'Pick at least one set above.';
+      return;
+    }
+    queue = shuffled(all);
+    next();
+  }
+
+  function next() {
+    if (queue.length === 0) queue = shuffled(getKanaSet(state));
+    current = queue.shift();
+    locked = false;
+    wrongThisRound = false;
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+
+    const pool = getKanaSet(state)
+      .filter(k => k.char !== current.char && k.script === current.script);
+    const distractors = shuffled(pool).slice(0, NUM_CHOICES - 1);
+    options = shuffled([current, ...distractors]);
+
+    seen++;
+    updateScore(settings, correct, seen);
+    renderChoices();
+    // Play sound shortly after render so user is ready
+    setTimeout(() => speakKana(current.char), 200);
+  }
+
+  function renderChoices() {
+    choicesEl.innerHTML = '';
+    options.forEach(k => {
+      const tile = document.createElement('button');
+      tile.className = 'choice-tile';
+      tile.type = 'button';
+      tile.textContent = k.char;
+      tile.addEventListener('click', () => choose(k, tile));
+      choicesEl.appendChild(tile);
+    });
+  }
+
+  function choose(k, tile) {
+    if (locked) return;
+    if (k.char === current.char) {
+      tile.classList.add('correct');
+      if (!wrongThisRound) correct++;
+      updateScore(settings, correct, seen);
+      playDing();
+      locked = true;
+      setTimeout(next, 600);
+    } else {
+      tile.classList.add('wrong');
+      tile.disabled = true;
+      wrongThisRound = true;
+      playBuzz();
+      feedback.className = 'feedback wrong';
+      feedback.innerHTML = `That's <span class="guess">${k.char}</span> (${k.romaji[0]}). Try again.`;
+    }
+  }
+
+  rebuild();
 }
 
 // ---- Phrase mode ----
