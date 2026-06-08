@@ -387,7 +387,7 @@ function renderReference(char) {
   cx.fillText(char, REF_SIZE / 2, REF_SIZE / 2 + 2);
   const bin = binarize(cx.getImageData(0, 0, REF_SIZE, REF_SIZE));
   const bits = normalizeBits(bin, REF_SIZE);
-  const dilated = dilate(bits, REF_SIZE, 3);
+  const dilated = dilate(bits, REF_SIZE, 5);
   let inkCount = 0;
   for (let i = 0; i < bits.length; i++) if (bits[i]) inkCount++;
   const entry = { bits, dilated, inkCount };
@@ -485,7 +485,7 @@ function recognize(userCanvas, target, candidates) {
   const cx = userCanvas.getContext('2d');
   const raw = binarize(cx.getImageData(0, 0, userCanvas.width, userCanvas.height));
   const userBits = normalizeBits(raw, REF_SIZE);
-  const userDilated = dilate(userBits, REF_SIZE, 3);
+  const userDilated = dilate(userBits, REF_SIZE, 5);
   let userInk = 0;
   for (let i = 0; i < userBits.length; i++) if (userBits[i]) userInk++;
 
@@ -497,13 +497,13 @@ function recognize(userCanvas, target, candidates) {
 
   const targetEntry = scored.find(s => s.kana.char === target.char);
   const top = scored[0];
+  const targetRank = scored.findIndex(s => s.kana.char === target.char);
 
-  // Match if target is top OR within a small margin of top AND above absolute threshold.
-  const ABS_THRESHOLD = 0.40;
-  const MARGIN = 0.04;
-  const isMatch =
-    targetEntry.score >= ABS_THRESHOLD &&
-    (top.kana.char === target.char || (top.score - targetEntry.score) <= MARGIN);
+  // Lenient: accept if target ranks in the top N AND clears a low absolute floor.
+  // The floor rejects empty/scribbled canvases where everything scores near 0.
+  const ABS_THRESHOLD = 0.28;
+  const TOP_N = 3;
+  const isMatch = targetEntry.score >= ABS_THRESHOLD && targetRank < TOP_N;
 
   return {
     isMatch,
