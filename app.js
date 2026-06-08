@@ -49,6 +49,20 @@ function shuffled(arr) {
   return a;
 }
 
+// Subtle fade-swap: fade element out, run update, fade back in.
+function swapContent(el, update) {
+  el.classList.add('swap');
+  el.classList.add('leaving');
+  setTimeout(() => {
+    update();
+    el.classList.remove('leaving');
+    el.classList.add('entering');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => el.classList.remove('entering'));
+    });
+  }, 160);
+}
+
 // ---- View routing ----
 const views = {
   menu: renderMenu,
@@ -175,7 +189,10 @@ function renderTyping(root) {
   function next() {
     if (queue.length === 0) queue = shuffled(getKanaSet(state));
     current = queue.shift();
-    glyph.textContent = current.char;
+    swapContent(glyph, () => {
+      glyph.textContent = current.char;
+      glyph.classList.remove('correct');
+    });
     input.value = '';
     input.classList.remove('wrong');
     seen++;
@@ -193,9 +210,8 @@ function renderTyping(root) {
       correct++;
       updateScore(settings, correct, seen);
       playDing();
-      glyph.classList.add('flash');
-      setTimeout(() => glyph.classList.remove('flash'), 180);
-      setTimeout(next, 250);
+      glyph.classList.add('correct');
+      setTimeout(next, 320);
       return;
     }
     // If user typed more chars than any accepted prefix → mark wrong
@@ -264,7 +280,8 @@ function renderDrawing(root) {
   ctx.lineWidth = 14;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#222';
+  ctx.strokeStyle = getComputedStyle(document.documentElement)
+    .getPropertyValue('--text').trim() || '#222';
 
   function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -341,10 +358,12 @@ function renderDrawing(root) {
     if (queue.length === 0) queue = shuffled(getKanaSet(state));
     current = queue.shift();
     clearCanvas();
-    const r = current.romaji[0];
-    const scriptTag = current.script === 'hiragana' ? 'hiragana' : 'katakana';
-    prompt.querySelector('.label').textContent = `Draw the ${scriptTag} for`;
-    prompt.querySelector('.romaji').textContent = r;
+    swapContent(prompt, () => {
+      const r = current.romaji[0];
+      const scriptTag = current.script === 'hiragana' ? 'hiragana' : 'katakana';
+      prompt.querySelector('.label').textContent = `Draw the ${scriptTag} for`;
+      prompt.querySelector('.romaji').textContent = r;
+    });
     seen++;
     updateScore(settings, correct, seen);
   }
@@ -454,8 +473,10 @@ function renderPhrase(root) {
     feedback.textContent = '';
     feedback.className = 'feedback';
 
-    prompt.querySelector('.romaji').textContent = current.romaji;
-    prompt.querySelector('.meaning').textContent = current.meaning;
+    swapContent(prompt, () => {
+      prompt.querySelector('.romaji').textContent = current.romaji;
+      prompt.querySelector('.meaning').textContent = current.meaning;
+    });
 
     const chars = [...current.kana];
     slots = chars.map(() => null);
@@ -600,8 +621,8 @@ function renderReference(char) {
   c.width = REF_SIZE;
   c.height = REF_SIZE;
   const cx = c.getContext('2d');
-  cx.fillStyle = 'white';
-  cx.fillRect(0, 0, REF_SIZE, REF_SIZE);
+  // Leave bg transparent; only the glyph pixels get alpha. Recognizer uses
+  // alpha-only ink detection so it's theme-agnostic.
   cx.fillStyle = 'black';
   cx.textAlign = 'center';
   cx.textBaseline = 'middle';
@@ -618,14 +639,12 @@ function renderReference(char) {
 }
 
 function binarize(imageData) {
-  // Returns Uint8Array of 0/1 where 1 = ink
+  // Returns Uint8Array of 0/1 where 1 = ink. Alpha-only so light or dark
+  // strokes on a transparent canvas both register as ink.
   const { data, width, height } = imageData;
   const out = new Uint8Array(width * height);
   for (let i = 0; i < width * height; i++) {
-    const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2], a = data[i * 4 + 3];
-    // ink = dark and visible
-    const luma = (r + g + b) / 3;
-    out[i] = (a > 50 && luma < 180) ? 1 : 0;
+    out[i] = data[i * 4 + 3] > 60 ? 1 : 0;
   }
   return { bits: out, width, height };
 }

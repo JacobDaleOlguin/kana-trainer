@@ -1,12 +1,47 @@
 :root {
-  --bg: #f7f3ec;
-  --panel: #ffffff;
-  --ink: #2a2a2a;
-  --muted: #888;
-  --accent: #d96459;
-  --accent-2: #5a8d77;
-  --shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
-  --radius: 14px;
+  color-scheme: light dark;
+
+  --bg: #fafaf7;
+  --surface: #ffffff;
+  --text: #1a1a18;
+  --text-muted: #6b6a66;
+  --text-faint: #9a9994;
+  --border: rgba(0, 0, 0, 0.07);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --accent: #5b8b76;
+  --accent-soft: rgba(91, 139, 118, 0.10);
+  --success: #2f9e5e;
+  --error: #c75450;
+  --error-soft: rgba(199, 84, 80, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Inter, Roboto, sans-serif;
+  --font-jp: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", "Meiryo", "Noto Sans JP", sans-serif;
+  --ease: cubic-bezier(0.2, 0.0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0e0d;
+    --surface: #19191a;
+    --text: #ededec;
+    --text-muted: #9d9c98;
+    --text-faint: #6a6965;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --accent: #82b59c;
+    --accent-soft: rgba(130, 181, 156, 0.12);
+    --success: #62c489;
+    --error: #e07876;
+    --error-soft: rgba(224, 120, 118, 0.10);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.35), 0 8px 32px rgba(0, 0, 0, 0.35);
+  }
 }
 
 * { box-sizing: border-box; }
@@ -16,8 +51,11 @@ html, body {
   padding: 0;
   height: 100%;
   background: var(--bg);
-  color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -30,211 +68,271 @@ body {
 header {
   width: 100%;
   max-width: 720px;
-  padding: 18px 24px;
+  padding: 22px 24px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 header h1 {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   margin: 0;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+}
+
+header nav {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
 }
 
 header nav button {
-  background: none;
+  background: transparent;
   border: none;
-  color: var(--muted);
-  font-size: 0.95rem;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 8px;
-}
-
-header nav button.active {
-  background: var(--ink);
-  color: white;
+  padding: 6px 14px;
+  border-radius: 999px;
+  transition: color 140ms var(--ease), background 140ms var(--ease);
 }
 
 header nav button:hover:not(.active) {
-  background: rgba(0, 0, 0, 0.05);
+  color: var(--text);
+}
+
+header nav button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 main {
   flex: 1;
   width: 100%;
   max-width: 720px;
-  padding: 12px 24px 40px;
+  padding: 14px 24px 60px;
 }
 
 .panel {
-  background: var(--panel);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
   padding: 28px;
 }
 
+/* ---- Controls / settings row ---- */
 .controls {
   display: flex;
-  gap: 16px;
+  gap: 18px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
   align-items: center;
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--border);
 }
 
 .controls label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-  color: #555;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
   cursor: pointer;
+  user-select: none;
 }
 
 .controls input[type="checkbox"] {
+  appearance: none;
   width: 16px;
   height: 16px;
-  accent-color: var(--accent-2);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background 120ms var(--ease), border-color 120ms var(--ease);
+}
+
+.controls input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.controls input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: no-repeat center / 10px url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 8 7 12 13 4'/></svg>");
 }
 
 .score {
   margin-left: auto;
-  font-size: 0.9rem;
-  color: var(--muted);
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
 }
 
 .score b {
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--text);
+  font-weight: 500;
 }
 
-/* ---- Mode selector (landing) ---- */
+/* ---- Menu (mode picker) ---- */
 .mode-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-top: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
 }
 
 .mode-card {
-  background: var(--panel);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 20px;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  border: 2px solid transparent;
+  transition: border-color 180ms var(--ease), transform 180ms var(--ease), box-shadow 180ms var(--ease);
 }
 
 .mode-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent-2);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .mode-card .glyph {
-  font-size: 3.5rem;
-  margin-bottom: 8px;
-  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-family: var(--font-jp);
+  font-size: 2.6rem;
+  margin-bottom: 10px;
+  color: var(--text);
+  line-height: 1;
 }
 
 .mode-card h2 {
-  margin: 0 0 6px;
-  font-size: 1.1rem;
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .mode-card p {
   margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/* ---- Subtle question-swap animation ---- */
+.swap {
+  transition: opacity 160ms var(--ease), transform 160ms var(--ease);
+}
+.swap.leaving {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.swap.entering {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
 /* ---- Typing mode ---- */
 .glyph-display {
-  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", "Noto Sans JP", sans-serif;
-  font-size: 11rem;
+  font-family: var(--font-jp);
+  font-size: 9rem;
+  font-weight: 400;
   text-align: center;
   line-height: 1;
-  margin: 20px 0 28px;
+  margin: 32px 0 36px;
   user-select: none;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  transition: color 200ms var(--ease);
 }
 
-.glyph-display.flash {
-  color: var(--accent-2);
-  transform: scale(1.08);
+.glyph-display.correct {
+  color: var(--success);
 }
 
 .typing-input {
   display: block;
   width: 100%;
-  font-size: 1.6rem;
+  font: inherit;
+  font-size: 1.25rem;
   padding: 14px 18px;
   text-align: center;
-  border: 2px solid #e3ddd0;
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  background: #fafafa;
+  background: var(--bg);
+  color: var(--text);
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 140ms var(--ease), background 140ms var(--ease), box-shadow 140ms var(--ease);
 }
 
 .typing-input:focus {
-  border-color: var(--accent-2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .typing-input.wrong {
-  border-color: var(--accent);
-  background: #fff4f3;
-  animation: shake 0.25s;
+  border-color: var(--error);
+  background: var(--error-soft);
+  animation: shake 280ms var(--ease);
 }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
 }
 
 .hint {
   text-align: center;
-  margin-top: 12px;
-  min-height: 1.2rem;
-  color: var(--muted);
-  font-size: 0.9rem;
+  margin-top: 14px;
+  min-height: 1.2em;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
 }
 
 /* ---- Drawing mode ---- */
 .draw-prompt {
   text-align: center;
-  margin: 12px 0 18px;
-}
-
-.draw-prompt .romaji {
-  font-size: 3rem;
-  font-weight: 600;
-  margin: 0;
+  margin: 8px 0 22px;
 }
 
 .draw-prompt .label {
-  font-size: 0.85rem;
-  color: var(--muted);
-  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
+  font-weight: 500;
+}
+
+.draw-prompt .romaji {
+  font-size: 2.4rem;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .canvas-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 #drawCanvas {
-  background: #fafafa;
-  border: 2px dashed #ddd;
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: crosshair;
   touch-action: none;
@@ -242,126 +340,134 @@ main {
 
 .draw-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
 }
 
 .btn {
-  font-size: 1rem;
-  padding: 10px 22px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
   font-weight: 500;
-  transition: background 0.15s ease, transform 0.1s ease;
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 140ms var(--ease), border-color 140ms var(--ease), color 140ms var(--ease), transform 80ms var(--ease);
 }
-
 .btn:active { transform: translateY(1px); }
 
 .btn.primary {
-  background: var(--accent-2);
+  background: var(--accent);
   color: white;
 }
-.btn.primary:hover { background: #4a7866; }
+.btn.primary:hover { filter: brightness(0.95); }
 
 .btn.secondary {
-  background: #eee;
-  color: var(--ink);
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border-strong);
 }
-.btn.secondary:hover { background: #e0e0e0; }
+.btn.secondary:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
 
 .feedback {
   text-align: center;
-  margin-top: 16px;
-  min-height: 1.5rem;
-  font-size: 1rem;
+  margin-top: 18px;
+  min-height: 1.4em;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  transition: color 140ms var(--ease);
 }
 
-.feedback.correct { color: var(--accent-2); font-weight: 600; }
-.feedback.wrong { color: var(--accent); }
+.feedback.correct { color: var(--success); }
+.feedback.wrong { color: var(--error); }
 
 .feedback .guess {
-  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
-  font-size: 1.4rem;
-  margin: 0 6px;
+  font-family: var(--font-jp);
+  font-size: 1.2rem;
+  margin: 0 4px;
 }
 
 /* ---- Phrase mode ---- */
 .draw-prompt .meaning {
-  font-size: 1rem;
-  color: var(--muted);
-  margin: 4px 0 0;
-  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 6px 0 0;
 }
 
 .slots {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   margin: 8px 0 22px;
   min-height: 88px;
   flex-wrap: wrap;
 }
 
 .slot {
-  width: 72px;
+  width: 68px;
   height: 80px;
-  border: 2px dashed #d6cfbf;
-  border-radius: 12px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
-  font-size: 2.4rem;
-  background: #fafafa;
-  transition: background 0.1s ease, border-color 0.1s ease, transform 0.1s ease;
+  font-family: var(--font-jp);
+  font-size: 2.2rem;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 140ms var(--ease), border-color 140ms var(--ease), transform 140ms var(--ease);
   user-select: none;
 }
 
 .slot.filled {
-  background: #fff;
+  background: var(--surface);
   border-style: solid;
-  border-color: var(--accent-2);
+  border-color: var(--accent);
   cursor: pointer;
 }
 
 .slot.drop-hover {
-  background: #eef4f0;
-  border-color: var(--accent-2);
-  transform: scale(1.04);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  border-style: solid;
 }
 
 .tile-pool {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   padding: 14px;
-  background: #f4efe5;
-  border-radius: 12px;
-  min-height: 80px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-height: 78px;
 }
 
 .tile {
-  width: 60px;
-  height: 68px;
-  border-radius: 10px;
-  background: var(--panel);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  width: 56px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
-  font-size: 2rem;
+  font-family: var(--font-jp);
+  font-size: 1.7rem;
+  color: var(--text);
   cursor: grab;
   user-select: none;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: transform 140ms var(--ease), border-color 140ms var(--ease), box-shadow 140ms var(--ease);
 }
 
 .tile:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  border-color: var(--border-strong);
 }
-
 .tile:active { cursor: grabbing; }
 .tile.dragging { opacity: 0.4; }
