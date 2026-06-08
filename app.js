@@ -500,24 +500,68 @@ function renderChoose(root) {
 }
 
 // ---- Listen mode (audio → tap kana) ----
+// Voice quality varies a lot — neural/cloud voices are far better than local SAPI ones.
+function scoreVoice(v) {
+  const name = (v.name || '').toLowerCase();
+  let s = 0;
+  if (name.includes('natural') || name.includes('neural')) s += 100;
+  if (name.includes('online')) s += 40;
+  if (name.includes('google')) s += 60;
+  if (name.includes('kyoko') || name.includes('otoya')) s += 50;     // macOS
+  if (name.includes('nanami') || name.includes('keita')) s += 30;    // newer MS
+  if (name.includes('haruka') || name.includes('ichiro') || name.includes('ayumi')) s -= 20; // older local
+  if (v.lang && v.lang.toLowerCase() === 'ja-jp') s += 5;
+  if (v.default) s += 1;
+  return s;
+}
+
+function listJapaneseVoices() {
+  if (!('speechSynthesis' in window)) return [];
+  return speechSynthesis.getVoices()
+    .filter(v => v.lang && v.lang.toLowerCase().startsWith('ja'))
+    .sort((a, b) => scoreVoice(b) - scoreVoice(a));
+}
+
+let chosenVoiceName = null;
+try {
+  chosenVoiceName = localStorage.getItem('kanaTrainer.voice');
+} catch (_) {}
+
+function currentVoice() {
+  const list = listJapaneseVoices();
+  if (chosenVoiceName) {
+    const found = list.find(v => v.name === chosenVoiceName);
+    if (found) return found;
+  }
+  return list[0] || null;
+}
+
 function speakKana(char) {
   if (!('speechSynthesis' in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(char);
   u.lang = 'ja-JP';
-  u.rate = 0.8;
-  const voices = speechSynthesis.getVoices();
-  const ja = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja'));
-  if (ja) u.voice = ja;
+  u.rate = 0.85;
+  const v = currentVoice();
+  if (v) u.voice = v;
   speechSynthesis.speak(u);
 }
 
-// Voices may load asynchronously; warm them up.
-if ('speechSynthesis' in window) {
-  speechSynthesis.getVoices();
-  if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
-  }
+// Wait for voices to populate (asynchronous in most browsers).
+function whenVoicesReady(cb) {
+  if (!('speechSynthesis' in window)) { cb([]); return; }
+  let voices = speechSynthesis.getVoices();
+  if (voices.length > 0) { cb(voices); return; }
+  const handler = () => {
+    voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      speechSynthesis.removeEventListener('voiceschanged', handler);
+      cb(voices);
+    }
+  };
+  speechSynthesis.addEventListener('voiceschanged', handler);
+  // Safety net in case the event never fires
+  setTimeout(() => cb(speechSynthesis.getVoices()), 1500);
 }
 
 function renderListen(root) {
@@ -538,6 +582,9 @@ function renderListen(root) {
     <button class="btn primary speak" type="button" title="Replay">
       <span class="speaker">▶</span> Play
     </button>
+    <div class="voice-picker">
+      <label>Voice <select class="voice-select"><option>Loading…</option></select></label>
+    </div>
     <p class="label">Tap the kana you heard</p>
   `;
   panel.appendChild(audioWrap);
@@ -552,20 +599,45 @@ function renderListen(root) {
 
   root.appendChild(panel);
 
-  // Heads-up if Japanese voice not present
-  if ('speechSynthesis' in window) {
-    const checkVoices = () => {
-      const v = speechSynthesis.getVoices();
-      const hasJa = v.some(x => x.lang && x.lang.toLowerCase().startsWith('ja'));
-      if (!hasJa && v.length > 0) {
-        feedback.className = 'feedback';
-        feedback.style.color = 'var(--text-faint)';
-        feedback.textContent = 'Tip: install a Japanese voice for better pronunciation.';
-      }
-    };
-    setTimeout(checkVoices, 400);
-  } else {
+  const voiceSelect = audioWrap.querySelector('.voice-select');
+
+  function populateVoices() {
+    const list = listJapaneseVoices();
+    voiceSelect.innerHTML = '';
+    if (list.length === 0) {
+      const opt = document.createElement('option');
+      opt.textContent = 'No Japanese voice installed';
+      opt.disabled = true;
+      voiceSelect.appendChild(opt);
+      voiceSelect.disabled = true;
+      feedback.style.color = 'var(--text-faint)';
+      feedback.textContent = 'No Japanese voice installed. On Windows: Settings → Time & language → Language → Add Japanese.';
+      return;
+    }
+    voiceSelect.disabled = false;
+    list.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      // Clean up Microsoft's verbose names a bit
+      let label = v.name.replace(/Microsoft\s+/i, '').replace(/\s*-\s*Japanese.*$/i, '');
+      if (/natural|neural/i.test(v.name)) label += ' ✦';
+      opt.textContent = label;
+      voiceSelect.appendChild(opt);
+    });
+    const cur = currentVoice();
+    if (cur) voiceSelect.value = cur.name;
+  }
+
+  voiceSelect.addEventListener('change', () => {
+    chosenVoiceName = voiceSelect.value;
+    try { localStorage.setItem('kanaTrainer.voice', chosenVoiceName); } catch (_) {}
+    if (current) speakKana(current.char);
+  });
+
+  if (!('speechSynthesis' in window)) {
     feedback.textContent = 'This browser does not support speech synthesis.';
+  } else {
+    whenVoicesReady(populateVoices);
   }
 
   audioWrap.querySelector('.speak').addEventListener('click', () => {

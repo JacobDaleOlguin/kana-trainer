@@ -468,6 +468,35 @@ main {
   margin: 0;
 }
 
+.voice-picker {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.voice-picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-select {
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  cursor: pointer;
+  max-width: 260px;
+}
+
+.voice-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 /* ---- Phrase mode ---- */
 .draw-prompt .meaning {
   font-size: 0.9rem;
