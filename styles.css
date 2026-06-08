@@ -285,3 +285,83 @@ main {
   font-size: 1.4rem;
   margin: 0 6px;
 }
+
+/* ---- Phrase mode ---- */
+.draw-prompt .meaning {
+  font-size: 1rem;
+  color: var(--muted);
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+.slots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0 22px;
+  min-height: 88px;
+  flex-wrap: wrap;
+}
+
+.slot {
+  width: 72px;
+  height: 80px;
+  border: 2px dashed #d6cfbf;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 2.4rem;
+  background: #fafafa;
+  transition: background 0.1s ease, border-color 0.1s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+.slot.filled {
+  background: #fff;
+  border-style: solid;
+  border-color: var(--accent-2);
+  cursor: pointer;
+}
+
+.slot.drop-hover {
+  background: #eef4f0;
+  border-color: var(--accent-2);
+  transform: scale(1.04);
+}
+
+.tile-pool {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px;
+  background: #f4efe5;
+  border-radius: 12px;
+  min-height: 80px;
+}
+
+.tile {
+  width: 60px;
+  height: 68px;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 2rem;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.tile:active { cursor: grabbing; }
+.tile.dragging { opacity: 0.4; }

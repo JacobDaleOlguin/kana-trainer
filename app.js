@@ -54,6 +54,7 @@ const views = {
   menu: renderMenu,
   typing: renderTyping,
   drawing: renderDrawing,
+  phrase: renderPhrase,
 };
 
 function go(view) {
@@ -85,6 +86,11 @@ function renderMenu(root) {
         <div class="glyph">ka</div>
         <h2>Drawing mode</h2>
         <p>Hear a sound, draw the symbol</p>
+      </div>
+      <div class="mode-card" data-go="phrase">
+        <div class="glyph">ねこ</div>
+        <h2>Phrase mode</h2>
+        <p>Drag kana to spell simple words</p>
       </div>
     </div>
   `;
@@ -365,6 +371,222 @@ function renderDrawing(root) {
   }
 
   rebuildQueue();
+}
+
+// ---- Phrase mode ----
+function renderPhrase(root) {
+  let queue = [];
+  let current = null;
+  let slots = [];       // array of tile objects or null, length = current.kana.length
+  let pool = [];        // array of tile objects available to drag
+  let correct = 0;
+  let seen = 0;
+  let nextTileId = 0;
+  let locked = false;
+
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+
+  const score = document.createElement('div');
+  score.className = 'controls';
+  score.innerHTML = `<span class="score" style="margin-left:0">Correct: <b data-role="correct">0</b> · Seen: <b data-role="seen">0</b></span>`;
+  panel.appendChild(score);
+
+  const prompt = document.createElement('div');
+  prompt.className = 'draw-prompt';
+  prompt.innerHTML = `<p class="label">Spell</p><p class="romaji"></p><p class="meaning"></p>`;
+  panel.appendChild(prompt);
+
+  const slotsEl = document.createElement('div');
+  slotsEl.className = 'slots';
+  panel.appendChild(slotsEl);
+
+  const poolEl = document.createElement('div');
+  poolEl.className = 'tile-pool';
+  panel.appendChild(poolEl);
+
+  const buttons = document.createElement('div');
+  buttons.className = 'draw-buttons';
+  buttons.innerHTML = `
+    <button class="btn secondary" data-act="reset">Reset</button>
+    <button class="btn secondary" data-act="skip">Skip</button>
+  `;
+  panel.appendChild(buttons);
+
+  const feedback = document.createElement('div');
+  feedback.className = 'feedback';
+  panel.appendChild(feedback);
+
+  root.appendChild(panel);
+
+  function updateScore() {
+    score.querySelector('[data-role="correct"]').textContent = correct;
+    score.querySelector('[data-role="seen"]').textContent = seen;
+  }
+
+  buttons.addEventListener('click', e => {
+    const act = e.target.dataset.act;
+    if (act === 'skip') next();
+    if (act === 'reset') resetTiles();
+  });
+
+  function pickDistractors(needed, count) {
+    // Pull a few extra kana of the same script(s) as the answer.
+    const scripts = new Set();
+    for (const ch of needed) {
+      if (/[぀-ゟ]/.test(ch)) scripts.add('hiragana');
+      if (/[゠-ヿ]/.test(ch)) scripts.add('katakana');
+    }
+    const pool = getKanaSet({
+      hiragana: scripts.has('hiragana'),
+      katakana: scripts.has('katakana'),
+      includeDakuten: true,
+    });
+    const seen = new Set(needed);
+    const candidates = pool.map(k => k.char).filter(c => !seen.has(c));
+    return shuffled(candidates).slice(0, count);
+  }
+
+  function next() {
+    if (queue.length === 0) queue = shuffled(PHRASES);
+    current = queue.shift();
+    locked = false;
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+
+    prompt.querySelector('.romaji').textContent = current.romaji;
+    prompt.querySelector('.meaning').textContent = current.meaning;
+
+    const chars = [...current.kana];
+    slots = chars.map(() => null);
+    const distractorCount = Math.min(4, Math.max(2, 6 - chars.length));
+    const distractors = pickDistractors(chars, distractorCount);
+    pool = shuffled([...chars, ...distractors]).map(ch => ({
+      id: ++nextTileId,
+      char: ch,
+    }));
+
+    seen++;
+    updateScore();
+    render();
+  }
+
+  function resetTiles() {
+    if (!current) return;
+    // Move any placed tiles back to pool.
+    for (const t of slots) if (t) pool.push(t);
+    slots = slots.map(() => null);
+    locked = false;
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+    render();
+  }
+
+  function placeTile(tile, slotIndex) {
+    if (locked) return;
+    // Remove from pool
+    const pi = pool.findIndex(t => t && t.id === tile.id);
+    if (pi >= 0) pool.splice(pi, 1);
+    // If slot occupied, kick existing tile back to pool
+    if (slots[slotIndex]) pool.push(slots[slotIndex]);
+    slots[slotIndex] = tile;
+    render();
+    maybeCheck();
+  }
+
+  function placeInFirstEmpty(tile) {
+    const idx = slots.findIndex(s => s === null);
+    if (idx >= 0) placeTile(tile, idx);
+  }
+
+  function unplaceTile(slotIndex) {
+    if (locked) return;
+    const tile = slots[slotIndex];
+    if (!tile) return;
+    slots[slotIndex] = null;
+    pool.push(tile);
+    feedback.textContent = '';
+    feedback.className = 'feedback';
+    render();
+  }
+
+  function maybeCheck() {
+    if (slots.some(s => s === null)) return;
+    locked = true;
+    const guess = slots.map(s => s.char).join('');
+    if (guess === current.kana) {
+      correct++;
+      updateScore();
+      playDing();
+      feedback.className = 'feedback correct';
+      feedback.innerHTML = `✓ <span class="guess">${current.kana}</span> — ${current.romaji}`;
+      setTimeout(next, 1100);
+    } else {
+      playBuzz();
+      feedback.className = 'feedback wrong';
+      feedback.innerHTML = `Not quite — wanted <span class="guess">${current.kana}</span>. Hit Reset to try again.`;
+    }
+  }
+
+  function render() {
+    // Slots
+    slotsEl.innerHTML = '';
+    slots.forEach((tile, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'slot' + (tile ? ' filled' : '');
+      slot.dataset.index = i;
+      if (tile) {
+        slot.textContent = tile.char;
+        slot.title = 'Click to return to pool';
+        slot.addEventListener('click', () => unplaceTile(i));
+      }
+      slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drop-hover'); });
+      slot.addEventListener('dragleave', () => slot.classList.remove('drop-hover'));
+      slot.addEventListener('drop', e => {
+        e.preventDefault();
+        slot.classList.remove('drop-hover');
+        const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        const fromPool = pool.find(t => t.id === id);
+        const fromSlot = slots.findIndex(t => t && t.id === id);
+        if (fromPool) placeTile(fromPool, i);
+        else if (fromSlot >= 0 && fromSlot !== i) {
+          // swap slot positions
+          const t = slots[fromSlot];
+          slots[fromSlot] = null;
+          placeTile(t, i);
+        }
+      });
+      slotsEl.appendChild(slot);
+    });
+
+    // Pool
+    poolEl.innerHTML = '';
+    pool.forEach(tile => {
+      const el = document.createElement('div');
+      el.className = 'tile';
+      el.textContent = tile.char;
+      el.draggable = true;
+      el.dataset.id = tile.id;
+      el.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', String(tile.id));
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', () => el.classList.remove('dragging'));
+      el.addEventListener('click', () => placeInFirstEmpty(tile));
+      poolEl.appendChild(el);
+    });
+
+    // Also allow dropping tiles back into the pool area
+    poolEl.ondragover = e => e.preventDefault();
+    poolEl.ondrop = e => {
+      e.preventDefault();
+      const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      const idx = slots.findIndex(t => t && t.id === id);
+      if (idx >= 0) unplaceTile(idx);
+    };
+  }
+
+  next();
 }
 
 // ---- Recognition: render glyph + pixel-overlap compare ----

@@ -56,6 +56,43 @@ const KANA = {
   katakanaDakuten: buildKana(KATAKANA_DAKUTEN, 'katakana', 'dakuten'),
 };
 
+// Simple words: 2–4 kana, mostly basic, a few katakana loanwords.
+const PHRASES = [
+  { kana: 'ねこ',   romaji: 'neko',    meaning: 'cat' },
+  { kana: 'いぬ',   romaji: 'inu',     meaning: 'dog' },
+  { kana: 'とり',   romaji: 'tori',    meaning: 'bird' },
+  { kana: 'さかな', romaji: 'sakana',  meaning: 'fish' },
+  { kana: 'うま',   romaji: 'uma',     meaning: 'horse' },
+  { kana: 'うし',   romaji: 'ushi',    meaning: 'cow' },
+  { kana: 'やま',   romaji: 'yama',    meaning: 'mountain' },
+  { kana: 'かわ',   romaji: 'kawa',    meaning: 'river' },
+  { kana: 'うみ',   romaji: 'umi',     meaning: 'sea' },
+  { kana: 'そら',   romaji: 'sora',    meaning: 'sky' },
+  { kana: 'つき',   romaji: 'tsuki',   meaning: 'moon' },
+  { kana: 'ほし',   romaji: 'hoshi',   meaning: 'star' },
+  { kana: 'ひと',   romaji: 'hito',    meaning: 'person' },
+  { kana: 'いえ',   romaji: 'ie',      meaning: 'house' },
+  { kana: 'ほん',   romaji: 'hon',     meaning: 'book' },
+  { kana: 'はな',   romaji: 'hana',    meaning: 'flower' },
+  { kana: 'みず',   romaji: 'mizu',    meaning: 'water' },
+  { kana: 'なまえ', romaji: 'namae',   meaning: 'name' },
+  { kana: 'あお',   romaji: 'ao',      meaning: 'blue' },
+  { kana: 'あか',   romaji: 'aka',     meaning: 'red' },
+  { kana: 'しろ',   romaji: 'shiro',   meaning: 'white' },
+  { kana: 'くろ',   romaji: 'kuro',    meaning: 'black' },
+  { kana: 'みどり', romaji: 'midori',  meaning: 'green' },
+  { kana: 'おちゃ', romaji: 'ocha',    meaning: 'tea' },
+  { kana: 'こめ',   romaji: 'kome',    meaning: 'rice' },
+  { kana: 'たまご', romaji: 'tamago',  meaning: 'egg' },
+  { kana: 'みみ',   romaji: 'mimi',    meaning: 'ear' },
+  { kana: 'めがね', romaji: 'megane',  meaning: 'glasses' },
+  { kana: 'ペン',   romaji: 'pen',     meaning: 'pen' },
+  { kana: 'パン',   romaji: 'pan',     meaning: 'bread' },
+  { kana: 'バス',   romaji: 'basu',    meaning: 'bus' },
+  { kana: 'カメラ', romaji: 'kamera',  meaning: 'camera' },
+  { kana: 'テレビ', romaji: 'terebi',  meaning: 'TV' },
+];
+
 function getKanaSet({ hiragana, katakana, includeDakuten }) {
   const set = [];
   if (hiragana) {
